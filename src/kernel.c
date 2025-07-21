@@ -57,6 +57,62 @@ char *strcpy(char *dest, const char *src) {
     return orig_dest;
 }
 
+char *strcat(char *dest, const char *src) {
+    char *orig_dest = dest;
+    // Find end of dest
+    while (*dest) {
+        dest++;
+    }
+    // Copy src to end of dest
+    while ((*dest++ = *src++)) {
+        // Copy including null terminator
+    }
+    return orig_dest;
+}
+
+int snprintf(char *str, size_t size, const char *format, ...) {
+    // Simple implementation for basic format strings
+    (void)size;  // Ignore size for simplicity (unsafe but minimal)
+    
+    const char *src = format;
+    char *dst = str;
+    int written = 0;
+    
+    while (*src && written < (int)size - 1) {
+        if (*src == '%' && *(src + 1)) {
+            src++; // Skip %
+            switch (*src) {
+                case 's': {
+                    // String placeholder - for now just copy format literally
+                    *dst++ = '%';
+                    *dst++ = 's';
+                    written += 2;
+                    break;
+                }
+                case 'd': {
+                    // Integer placeholder - for now just copy format literally  
+                    *dst++ = '%';
+                    *dst++ = 'd';
+                    written += 2;
+                    break;
+                }
+                default:
+                    *dst++ = '%';
+                    *dst++ = *src;
+                    written += 2;
+                    break;
+            }
+        } else {
+            *dst++ = *src;
+            written++;
+        }
+        src++;
+    }
+    
+    *dst = '\0';
+    return written;
+}
+
 // Kernel panic function
 void kernel_panic(const char *message) {
     vga_set_color(VGA_COLOR_WHITE, VGA_COLOR_RED);

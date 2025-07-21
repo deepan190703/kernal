@@ -28,6 +28,13 @@ void cmd_exit(int argc, char **argv);
 void cmd_reboot(int argc, char **argv);
 void cmd_about(int argc, char **argv);
 void cmd_test(int argc, char **argv);
+void cmd_mkdir(int argc, char **argv);
+void cmd_rm(int argc, char **argv);
+void cmd_cp(int argc, char **argv);
+void cmd_date(int argc, char **argv);
+void cmd_calc(int argc, char **argv);
+void cmd_whoami(int argc, char **argv);
+void cmd_edit(int argc, char **argv);
 
 // Command table
 static command_t commands[] = {
@@ -38,6 +45,13 @@ static command_t commands[] = {
     {"meminfo", "Show memory information", cmd_meminfo},
     {"ls", "List files", cmd_ls},
     {"cat", "Display file contents", cmd_cat},
+    {"mkdir", "Create directory", cmd_mkdir},
+    {"rm", "Remove file", cmd_rm},
+    {"cp", "Copy file", cmd_cp},
+    {"date", "Show date and time", cmd_date},
+    {"calc", "Basic calculator", cmd_calc},
+    {"whoami", "Show current user", cmd_whoami},
+    {"edit", "Simple text editor", cmd_edit},
     {"uptime", "Show system uptime", cmd_uptime},
     {"ifconfig", "Show network interfaces", cmd_ifconfig},
     {"ping", "Ping an IP address", cmd_ping},
@@ -48,6 +62,9 @@ static command_t commands[] = {
     {"test", "Run system tests", cmd_test},
     {NULL, NULL, NULL}
 };
+
+// Helper function declarations
+static int simple_atoi(const char *str);
 
 // External function declarations
 extern int keyboard_readline(char *buffer, int max_len);
@@ -231,6 +248,201 @@ void cmd_test(int argc, char **argv) {
     network_test_receive();
     
     vga_puts("All tests completed.\n");
+}
+
+// New command implementations
+void cmd_mkdir(int argc, char **argv) {
+    if (argc < 2) {
+        vga_puts("Usage: mkdir <directory_name>\n");
+        return;
+    }
+    
+    // In our simple filesystem, we'll create a special file to represent directories
+    char dir_marker[256];
+    snprintf(dir_marker, sizeof(dir_marker), "[DIR] %s", argv[1]);
+    
+    int result = fs_create_file(argv[1], dir_marker, strlen(dir_marker));
+    if (result == 0) {
+        vga_printf("Directory '%s' created\n", argv[1]);
+    } else {
+        vga_printf("mkdir: cannot create directory '%s'\n", argv[1]);
+    }
+}
+
+void cmd_rm(int argc, char **argv) {
+    if (argc < 2) {
+        vga_puts("Usage: rm <filename>\n");
+        return;
+    }
+    
+    int result = fs_delete_file(argv[1]);
+    if (result == 0) {
+        vga_printf("File '%s' removed\n", argv[1]);
+    } else {
+        vga_printf("rm: cannot remove '%s': No such file\n", argv[1]);
+    }
+}
+
+void cmd_cp(int argc, char **argv) {
+    if (argc < 3) {
+        vga_puts("Usage: cp <source> <destination>\n");
+        return;
+    }
+    
+    char buffer[4096];
+    int result = fs_read_file(argv[1], buffer, sizeof(buffer));
+    if (result >= 0) {
+        int write_result = fs_create_file(argv[2], buffer, result);
+        if (write_result == 0) {
+            vga_printf("'%s' copied to '%s'\n", argv[1], argv[2]);
+        } else {
+            vga_printf("cp: cannot create '%s'\n", argv[2]);
+        }
+    } else {
+        vga_printf("cp: cannot access '%s': No such file\n", argv[1]);
+    }
+}
+
+void cmd_date(int argc, char **argv) {
+    (void)argc; (void)argv;
+    
+    // Simple date implementation using timer ticks
+    u32 uptime = timer_get_uptime();
+    u32 days = uptime / 86400;
+    u32 hours = (uptime % 86400) / 3600;
+    u32 minutes = (uptime % 3600) / 60;
+    u32 seconds = uptime % 60;
+    
+    // Base date: Jan 1, 2024 (arbitrary starting point)
+    u32 year = 2024;
+    u32 month = 1;
+    u32 day = 1 + days;
+    
+    // Simple month calculation (ignore leap years for simplicity)
+    while (day > 30) {
+        day -= 30;
+        month++;
+        if (month > 12) {
+            month = 1;
+            year++;
+        }
+    }
+    
+    vga_printf("Date: %02d/%02d/%d %02d:%02d:%02d\n", 
+               month, day, year, hours, minutes, seconds);
+}
+
+void cmd_calc(int argc, char **argv) {
+    if (argc < 4) {
+        vga_puts("Usage: calc <num1> <operator> <num2>\n");
+        vga_puts("Operators: +, -, *, /\n");
+        return;
+    }
+    
+    int num1 = simple_atoi(argv[1]);
+    int num2 = simple_atoi(argv[3]);
+    char op = argv[2][0];
+    int result = 0;
+    
+    switch (op) {
+        case '+':
+            result = num1 + num2;
+            vga_printf("%d + %d = %d\n", num1, num2, result);
+            break;
+        case '-':
+            result = num1 - num2;
+            vga_printf("%d - %d = %d\n", num1, num2, result);
+            break;
+        case '*':
+            result = num1 * num2;
+            vga_printf("%d * %d = %d\n", num1, num2, result);
+            break;
+        case '/':
+            if (num2 != 0) {
+                result = num1 / num2;
+                vga_printf("%d / %d = %d\n", num1, num2, result);
+            } else {
+                vga_puts("Error: Division by zero\n");
+            }
+            break;
+        default:
+            vga_printf("Error: Unknown operator '%c'\n", op);
+            break;
+    }
+}
+
+void cmd_whoami(int argc, char **argv) {
+    (void)argc; (void)argv;
+    
+    process_t *current = get_current_process();
+    if (current) {
+        vga_printf("User: kernel (PID: %d)\n", current->pid);
+        vga_printf("Process: %s\n", current->name);
+    } else {
+        vga_puts("User: kernel (system)\n");
+        vga_puts("Process: kernel_main\n");
+    }
+    vga_puts("Privileges: superuser\n");
+}
+
+void cmd_edit(int argc, char **argv) {
+    if (argc < 2) {
+        vga_puts("Usage: edit <filename>\n");
+        return;
+    }
+    
+    vga_printf("Simple text editor for '%s'\n", argv[1]);
+    vga_puts("Enter text (type 'EOF' on a new line to save and exit):\n");
+    
+    char content[4096] = {0};
+    char line[256];
+    int total_length = 0;
+    
+    while (1) {
+        vga_puts("> ");
+        if (keyboard_readline(line, sizeof(line)) > 0) {
+            if (strcmp(line, "EOF") == 0) {
+                break;
+            }
+            
+            size_t line_length = strlen(line);
+            if ((size_t)(total_length + line_length + 1) < sizeof(content)) {
+                strcat(content, line);
+                strcat(content, "\n");
+                total_length += line_length + 1;
+            } else {
+                vga_puts("File too large, saving current content...\n");
+                break;
+            }
+        }
+    }
+    
+    int result = fs_create_file(argv[1], content, total_length);
+    if (result == 0) {
+        vga_printf("File '%s' saved (%d bytes)\n", argv[1], total_length);
+    } else {
+        vga_printf("Error saving file '%s'\n", argv[1]);
+    }
+}
+
+// Helper function for calculator
+static int simple_atoi(const char *str) {
+    int result = 0;
+    int sign = 1;
+    
+    if (*str == '-') {
+        sign = -1;
+        str++;
+    } else if (*str == '+') {
+        str++;
+    }
+    
+    while (*str >= '0' && *str <= '9') {
+        result = result * 10 + (*str - '0');
+        str++;
+    }
+    
+    return result * sign;
 }
 
 // Print shell prompt
