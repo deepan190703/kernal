@@ -85,6 +85,54 @@ void timer_init(void);
 void shell_init(void);
 void network_init(void);
 
+// Memory management functions
+void *kmalloc(u32 size);
+void kfree(void *ptr);
+void memory_stats(void);
+
+// Process management functions
+process_t *create_process(const char *name, void (*entry_point)(void));
+void schedule(void);
+void list_processes(void);
+process_t *get_current_process(void);
+void terminate_process(u32 pid);
+
+// File system functions
+int fs_create_file(const char *name, const char *content, u32 size);
+int fs_read_file(const char *name, char *buffer, u32 buffer_size);
+int fs_delete_file(const char *name);
+void fs_list_files(void);
+int fs_write_file(const char *name, const char *content, u32 size);
+void fs_stats(void);
+
+// Timer functions
+u32 timer_get_ticks(void);
+u32 timer_get_uptime(void);
+void timer_sleep(u32 ticks);
+void timer_sleep_ms(u32 ms);
+void timer_set_frequency(u32 frequency);
+
+// Keyboard functions
+char keyboard_getchar(void);
+int keyboard_has_data(void);
+int keyboard_readline(char *buffer, int max_len);
+
+// Network functions
+void network_list_interfaces(void);
+int network_ping(u32 target_ip);
+void network_stats(void);
+int network_socket(int domain, int type, int protocol);
+int network_bind(int sockfd, u32 addr, u16 port);
+int network_listen(int sockfd, int backlog);
+void network_test_receive(void);
+
+// Interrupt functions
+void register_interrupt_handler(u8 n, void (*handler)(void));
+void idt_set_gate(u8 num, u32 base, u16 sel, u8 flags);
+
+// System call dispatcher
+int syscall_dispatcher(int syscall_num, int arg1, int arg2, int arg3);
+
 // Utility functions
 void *memset(void *dest, int val, size_t len);
 void *memcpy(void *dest, const void *src, size_t len);

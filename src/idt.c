@@ -43,7 +43,7 @@ typedef void (*interrupt_handler_t)(void);
 static interrupt_handler_t interrupt_handlers[256];
 
 // Set up an IDT entry
-static void idt_set_gate(u8 num, u32 base, u16 sel, u8 flags) {
+void idt_set_gate(u8 num, u32 base, u16 sel, u8 flags) {
     idt_entries[num].base_lo = base & 0xFFFF;
     idt_entries[num].base_hi = (base >> 16) & 0xFFFF;
     idt_entries[num].sel     = sel;
@@ -62,24 +62,24 @@ void idt_init(void) {
     // Remap the IRQ table
     // Initialize PIC
     // ICW1 - begin initialization
-    __asm__ volatile ("outb %1, %0" : : "dN"(0x20), "a"(0x11));
-    __asm__ volatile ("outb %1, %0" : : "dN"(0xA0), "a"(0x11));
+    __asm__ volatile ("outb %%al, $0x20" : : "a"(0x11));
+    __asm__ volatile ("outb %%al, $0xA0" : : "a"(0x11));
     
     // ICW2 - remap offset address of IDT
-    __asm__ volatile ("outb %1, %0" : : "dN"(0x21), "a"(0x20)); // Master PIC offset
-    __asm__ volatile ("outb %1, %0" : : "dN"(0xA1), "a"(0x28)); // Slave PIC offset
+    __asm__ volatile ("outb %%al, $0x21" : : "a"(0x20)); // Master PIC offset
+    __asm__ volatile ("outb %%al, $0xA1" : : "a"(0x28)); // Slave PIC offset
     
     // ICW3 - setup cascade
-    __asm__ volatile ("outb %1, %0" : : "dN"(0x21), "a"(0x04));
-    __asm__ volatile ("outb %1, %0" : : "dN"(0xA1), "a"(0x02));
+    __asm__ volatile ("outb %%al, $0x21" : : "a"(0x04));
+    __asm__ volatile ("outb %%al, $0xA1" : : "a"(0x02));
     
     // ICW4 - environment info
-    __asm__ volatile ("outb %1, %0" : : "dN"(0x21), "a"(0x01));
-    __asm__ volatile ("outb %1, %0" : : "dN"(0xA1), "a"(0x01));
+    __asm__ volatile ("outb %%al, $0x21" : : "a"(0x01));
+    __asm__ volatile ("outb %%al, $0xA1" : : "a"(0x01));
     
     // Mask interrupts
-    __asm__ volatile ("outb %1, %0" : : "dN"(0x21), "a"(0x00));
-    __asm__ volatile ("outb %1, %0" : : "dN"(0xA1), "a"(0x00));
+    __asm__ volatile ("outb %%al, $0x21" : : "a"(0x00));
+    __asm__ volatile ("outb %%al, $0xA1" : : "a"(0x00));
 
     // Set up ISRs (Interrupt Service Routines)
     idt_set_gate(0,  (u32)isr0,  0x08, 0x8E);
@@ -154,9 +154,9 @@ void isr_handler(u32 interrupt_number, u32 error_code) {
 void irq_handler(u32 interrupt_number) {
     // Send EOI to PICs
     if (interrupt_number >= 40) {
-        __asm__ volatile ("outb %1, %0" : : "dN"(0xA0), "a"(0x20)); // Slave
+        __asm__ volatile ("outb %%al, $0xA0" : : "a"(0x20)); // Slave
     }
-    __asm__ volatile ("outb %1, %0" : : "dN"(0x20), "a"(0x20)); // Master
+    __asm__ volatile ("outb %%al, $0x20" : : "a"(0x20)); // Master
 
     if (interrupt_handlers[interrupt_number] != 0) {
         interrupt_handlers[interrupt_number]();

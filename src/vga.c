@@ -121,7 +121,6 @@ void vga_puts(const char *str) {
 
 // Simple printf implementation
 void vga_printf(const char *format, ...) {
-    char buffer[1024];
     char *str;
     int num;
     unsigned int unum;
