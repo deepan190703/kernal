@@ -102,14 +102,7 @@ void process_init(void) {
     next_pid = 1;
     process_count = 0;
     
-    // Create idle process
-    create_process("idle", idle_process);
-    
-    // Create test processes
-    create_process("test1", test_process1);
-    create_process("test2", test_process2);
-    
-    vga_printf("Process management initialized with %d processes\n", process_count);
+    vga_printf("Process management initialized\n");
 }
 
 // Simple scheduler

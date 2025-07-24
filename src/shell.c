@@ -487,7 +487,10 @@ void shell_main_loop(void) {
 // Initialize shell
 void shell_init(void) {
     shell_running = 1;
-    
+}
+
+// Start shell with welcome message
+void shell_start(void) {
     vga_set_color(VGA_COLOR_YELLOW, VGA_COLOR_BLACK);
     vga_puts("\n=== Welcome to Comprehensive Kernel Shell ===\n");
     vga_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
