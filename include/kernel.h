@@ -83,6 +83,7 @@ void filesystem_init(void);
 void keyboard_init(void);
 void timer_init(void);
 void shell_init(void);
+void shell_start(void);
 void network_init(void);
 
 // Memory management functions

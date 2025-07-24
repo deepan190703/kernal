@@ -217,8 +217,8 @@ void kernel_main(u32 multiboot_magic, struct multiboot_info *mbi) {
     vga_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
     vga_puts("\nStarting shell...\n");
     
-    // Start the main shell loop
-    shell_init();
+    // Start the shell with welcome message and main loop
+    shell_start();
     
     // Should never reach here
     kernel_panic("Shell exited unexpectedly");
